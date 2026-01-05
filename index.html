@@ -1,45 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Rhythm Game PWA</title>
 
-  <!-- ★ スマホ表示の基本設定 -->
+  <!-- Mobile optimization -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-  <!-- ★ PWA manifest -->
+  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
 
-  <!-- ★ iOS 用：ステータスバーをアプリっぽく -->
+  <!-- iOS PWA support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-  <!-- ★ アイコン（あとで用意してもいい） -->
+  <!-- Icons -->
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
-  <!-- ここから先は今までの CSS など -->
   <style>
-    /* ここに今までの CSS を入れる（必要なら少し修正） */
-
     body {
       margin: 0;
       background: #000;
       color: white;
       font-family: sans-serif;
       text-align: center;
-      overflow: hidden; /* PWA化したときにスクロールしないように */
+      overflow: hidden;
     }
 
     #menu, #game, #result {
-      margin-top: 10px;
+      margin-top: 20px;
     }
 
-    /* ★ PWA時にスマホでベストサイズに近づける設定 */
     canvas {
       background: #111;
       display: block;
-      margin: 5px auto;
+      margin: 10px auto;
       touch-action: none;
-      /* 内部解像度はJSで400x600にしておいて、
-         見た目だけ画面の高さに合わせて拡大 */
       max-width: 100vw;
       max-height: 90vh;
     }
@@ -51,108 +47,113 @@
       border-radius: 8px;
     }
 
-    h2 { font-size: 24px; }
-    p  { font-size: 16px; }
+    h2 { font-size: 26px; }
+    p  { font-size: 18px; }
   </style>
 </head>
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>Rhythm Game Auto Device Version</title>
-
-<style>
-  body {
-    margin: 0;
-    background: #000;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-  }
-
-  #menu, #game, #result {
-    margin-top: 20px;
-  }
-
-  canvas {
-    background: #111;
-    display: block;
-    margin: 10px auto;
-    touch-action: none;
-  }
-
-  button {
-    padding: 10px 18px;
-    margin: 6px;
-    font-size: 18px;
-    border-radius: 8px;
-  }
-
-  h2 { font-size: 26px; }
-  p  { font-size: 18px; }
-</style>
-</head>
 <body>
 
+<!-- MENU -->
 <div id="menu">
-  <h2>曲と難易度を選択</h2>
+  <h2>Select Song & Difficulty</h2>
+
+  <!-- Added message -->
+  <p style="font-size:14px; color:#ccc; margin-bottom:20px;">
+    This game is created for practice purposes.
+  </p>
+
   <div>
-    <button onclick="startGame(0, 'easy')">曲1：Easy Beat（Easy）</button>
-    <button onclick="startGame(0, 'hard')">曲1：Easy Beat（Hard）</button>
+    <button onclick="startGame(0, 'easy')">
+      Easy Beat (Easy) — Played: <span id="count-0-easy">0</span>
+    </button>
+    <button onclick="startGame(0, 'hard')">
+      Easy Beat (Hard) — Played: <span id="count-0-hard">0</span>
+    </button>
   </div>
+
   <div>
-    <button onclick="startGame(1, 'easy')">曲2：Fast Groove（Easy）</button>
-    <button onclick="startGame(1, 'hard')">曲2：Fast Groove（Hard）</button>
+    <button onclick="startGame(1, 'easy')">
+      Fast Groove (Easy) — Played: <span id="count-1-easy">0</span>
+    </button>
+    <button onclick="startGame(1, 'hard')">
+      Fast Groove (Hard) — Played: <span id="count-1-hard">0</span>
+    </button>
   </div>
-  <p>PC：S / D / K / L　｜　スマホ：レーンをタップ</p>
+
+  <p>PC: S / D / K / L | Mobile: Tap the lanes</p>
 </div>
 
+<!-- GAME -->
 <div id="game" style="display:none;">
   <h2 id="songTitle"></h2>
   <canvas id="canvas"></canvas>
   <p id="info"></p>
 </div>
 
+<!-- RESULT -->
 <div id="result" style="display:none;">
-  <h2>結果</h2>
+  <h2>Result</h2>
   <p id="finalScore"></p>
   <p id="finalCombo"></p>
   <p id="finalJudge"></p>
-  <button onclick="returnToMenu()">曲選択に戻る</button>
+  <button onclick="returnToMenu()">Back to Menu</button>
 </div>
 
 <script>
-// ==========================
-// デバイス判定
-// ==========================
+/* ------------------------------
+   PLAY COUNT SYSTEM
+------------------------------ */
+function incrementPlayCount(songIndex, difficulty) {
+  const key = `playcount-${songIndex}-${difficulty}`;
+  let count = localStorage.getItem(key);
+  if (!count) count = 0;
+  count = Number(count) + 1;
+  localStorage.setItem(key, count);
+
+  document.getElementById(`count-${songIndex}-${difficulty}`).textContent = count;
+}
+
+window.onload = function() {
+  const list = [
+    [0, "easy"], [0, "hard"],
+    [1, "easy"], [1, "hard"]
+  ];
+  list.forEach(([i, d]) => {
+    const key = `playcount-${i}-${d}`;
+    const count = localStorage.getItem(key) || 0;
+    document.getElementById(`count-${i}-${d}`).textContent = count;
+  });
+};
+
+
+/* ------------------------------
+   DEVICE CHECK
+------------------------------ */
 function isMobileDevice() {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
-// ==========================
-// Canvas 初期設定
-// ==========================
+/* ------------------------------
+   CANVAS SETUP
+------------------------------ */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// 内部解像度（ゲームロジック用）
 canvas.width  = 400;
 canvas.height = 600;
 
-// ★ スマホは縦横 1.5 倍に強制拡大
 if (isMobileDevice()) {
-  canvas.style.width = (400 * 1.5) + "px";   // 600px
-  canvas.style.height = (600 * 1.5) + "px";  // 900px
+  canvas.style.width = (400 * 1.5) + "px";
+  canvas.style.height = (600 * 1.5) + "px";
 } else {
-  // ★ PC は小さめ固定
   canvas.style.width = "350px";
   canvas.style.height = "525px";
 }
 
-// ==========================
-// 曲データ
-// ==========================
+/* ------------------------------
+   SONG DATA
+------------------------------ */
 const songs = [
   {
     title: "Easy Beat",
@@ -211,9 +212,9 @@ let judgeCount = { Perfect: 0, Good: 0, Miss: 0 };
 let lastJudgment = "", lastJudgmentTimer = 0;
 let holdState = [null, null, null, null];
 
-// ==========================
-// ゲームロジック（内部座標固定）
-// ==========================
+/* ------------------------------
+   GAME LOGIC
+------------------------------ */
 const lanes = 4;
 const laneWidth = canvas.width / lanes;
 const hitY = 500;
@@ -224,7 +225,6 @@ const perfectWindow = 0.06;
 const goodWindow    = 0.12;
 const missWindow    = 0.18;
 
-// PCキー
 const keyToLane = { s: 0, d: 1, k: 2, l: 3 };
 
 document.addEventListener("keydown", e => {
@@ -237,15 +237,12 @@ document.addEventListener("keyup", e => {
   if (keyToLane[key] !== undefined) handleKeyUp(keyToLane[key]);
 });
 
-// スマホタップ
 canvas.addEventListener("touchstart", e => {
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
   const touch = e.touches[0];
-
   const x = touch.clientX - rect.left;
   const lane = Math.floor(x / laneWidth);
-
   handleKeyDown(lane);
 });
 
@@ -254,10 +251,12 @@ canvas.addEventListener("touchend", e => {
   handleTouchEnd();
 });
 
-// ==========================
-// ゲーム開始
-// ==========================
+/* ------------------------------
+   START GAME
+------------------------------ */
 function startGame(songIndex, difficulty) {
+  incrementPlayCount(songIndex, difficulty);
+
   document.getElementById("menu").style.display = "none";
   document.getElementById("result").style.display = "none";
   document.getElementById("game").style.display = "block";
@@ -291,9 +290,9 @@ function startGame(songIndex, difficulty) {
   update();
 }
 
-// ==========================
-// 判定
-// ==========================
+/* ------------------------------
+   JUDGMENT
+------------------------------ */
 function judge(diff) {
   const ad = Math.abs(diff);
   if (ad <= perfectWindow) return "Perfect";
@@ -319,9 +318,9 @@ function applyJudgment(note, result) {
   lastJudgmentTimer = 0.5;
 }
 
-// ==========================
-// キーダウン
-// ==========================
+/* ------------------------------
+   KEY DOWN
+------------------------------ */
 function handleKeyDown(lane) {
   const t = performance.now() / 1000 - startTime;
 
@@ -350,9 +349,9 @@ function handleKeyDown(lane) {
   }
 }
 
-// ==========================
-// キーアップ
-// ==========================
+/* ------------------------------
+   KEY UP
+------------------------------ */
 function handleKeyUp(lane) {
   const note = holdState[lane];
   if (!note) return;
@@ -364,7 +363,9 @@ function handleKeyUp(lane) {
   holdState[lane] = null;
 }
 
-// スマホ：ロング終端
+/* ------------------------------
+   TOUCH END
+------------------------------ */
 function handleTouchEnd() {
   const t = performance.now() / 1000 - startTime;
   for (let lane = 0; lane < 4; lane++) {
@@ -376,9 +377,9 @@ function handleTouchEnd() {
   }
 }
 
-// ==========================
-// 曲終了判定
-// ==========================
+/* ------------------------------
+   END CHECK
+------------------------------ */
 function checkEnd(t) {
   let lastEnd = 0;
   for (let n of notes) {
@@ -388,9 +389,9 @@ function checkEnd(t) {
   return t > lastEnd + 1.0;
 }
 
-// ==========================
-// メインループ
-// ==========================
+/* ------------------------------
+   MAIN LOOP
+------------------------------ */
 function update() {
   const now = performance.now() / 1000;
   const t = now - startTime;
@@ -462,9 +463,9 @@ function update() {
   requestAnimationFrame(update);
 }
 
-// ==========================
-// 背景
-// ==========================
+/* ------------------------------
+   BACKGROUND
+------------------------------ */
 function drawBackground(t) {
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
   grad.addColorStop(0, "#001");
@@ -479,37 +480,14 @@ function drawBackground(t) {
   }
 }
 
-// ==========================
-// 結果画面
-// ==========================
+/* ------------------------------
+   RESULT
+------------------------------ */
 function showResult() {
   document.getElementById("game").style.display = "none";
   document.getElementById("result").style.display = "block";
 
-  document.getElementById("finalScore").innerText = "スコア: " + score;
-  document.getElementById("finalCombo").innerText = "最大コンボ: " + maxCombo;
+  document.getElementById("finalScore").innerText = "Score: " + score;
+  document.getElementById("finalCombo").innerText = "Max Combo: " + maxCombo;
   document.getElementById("finalJudge").innerText =
-    `Perfect: ${judgeCount.Perfect} / Good: ${judgeCount.Good} / Miss: ${judgeCount.Miss}`;
-}
-
-// ==========================
-// 曲選択に戻る
-// ==========================
-function returnToMenu() {
-  document.getElementById("result").style.display = "none";
-  document.getElementById("menu").style.display = "block";
-}
-</script>
-<script>
-  // ★ PWA 用 Service Worker 登録
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js')
-        .catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-  }
-</script>
-</body>
-</html>
+    `Perfect: ${judgeCount.Perfect} / Good: ${judgeCount.Good} / Miss: ${
