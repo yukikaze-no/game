@@ -125,9 +125,7 @@ window.onload = function() {
     document.getElementById(`count-${i}-${d}`).textContent = count;
   });
 };
-
-
-/* ------------------------------
+  /* ------------------------------
    DEVICE CHECK
 ------------------------------ */
 function isMobileDevice() {
@@ -289,8 +287,7 @@ function startGame(songIndex, difficulty) {
   startTime = performance.now() / 1000;
   update();
 }
-
-/* ------------------------------
+  /* ------------------------------
    JUDGMENT
 ------------------------------ */
 function judge(diff) {
@@ -490,4 +487,27 @@ function showResult() {
   document.getElementById("finalScore").innerText = "Score: " + score;
   document.getElementById("finalCombo").innerText = "Max Combo: " + maxCombo;
   document.getElementById("finalJudge").innerText =
-    `Perfect: ${judgeCount.Perfect} / Good: ${judgeCount.Good} / Miss: ${
+    `Perfect: ${judgeCount.Perfect} / Good: ${judgeCount.Good} / Miss: ${judgeCount.Miss}`;
+}
+
+/* ------------------------------
+   RETURN TO MENU
+------------------------------ */
+function returnToMenu() {
+  document.getElementById("result").style.display = "none";
+  document.getElementById("menu").style.display = "block";
+}
+
+/* ------------------------------
+   PWA SERVICE WORKER
+------------------------------ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(err => console.log('ServiceWorker registration failed: ', err));
+  });
+}
+</script>
+
+</body>
+</html>
